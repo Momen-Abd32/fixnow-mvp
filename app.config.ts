@@ -87,6 +87,19 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     [
+      "expo-image-picker",
+      {
+        photosPermission: "Allow $(PRODUCT_NAME) to add problem photos and technician verification evidence.",
+        cameraPermission: "Allow $(PRODUCT_NAME) to capture problem photos and technician verification evidence.",
+      },
+    ],
+    [
+      "expo-location",
+      {
+        locationWhenInUsePermission: "Allow $(PRODUCT_NAME) to use your location to match and track home service appointments.",
+      },
+    ],
+    [
       "expo-audio",
       {
         microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone.",
