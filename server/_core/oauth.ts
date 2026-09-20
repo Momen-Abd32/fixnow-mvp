@@ -1,130 +1,109 @@
+import crypto from "crypto";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const.js";
 import type { Express, Request, Response } from "express";
-import { getUserByOpenId, upsertUser } from "../db";
+import { createLocalUser, getUserByEmail, getUserByOpenId } from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 
-function getQueryParam(req: Request, key: string): string | undefined {
-  const value = req.query[key];
-  return typeof value === "string" ? value : undefined;
+function hashPassword(password: string, salt: string) {
+  return crypto.scryptSync(password, salt, 64).toString("hex");
 }
 
-async function syncUser(userInfo: {
-  openId?: string | null;
-  name?: string | null;
-  email?: string | null;
-  loginMethod?: string | null;
-  platform?: string | null;
-}) {
-  if (!userInfo.openId) {
-    throw new Error("openId missing from user info");
-  }
-
-  const lastSignedIn = new Date();
-  await upsertUser({
-    openId: userInfo.openId,
-    name: userInfo.name || null,
-    email: userInfo.email ?? null,
-    loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-    lastSignedIn,
-  });
-  const saved = await getUserByOpenId(userInfo.openId);
-  return (
-    saved ?? {
-      openId: userInfo.openId,
-      name: userInfo.name,
-      email: userInfo.email,
-      loginMethod: userInfo.loginMethod ?? null,
-      lastSignedIn,
-    }
-  );
+function makePasswordHash(password: string) {
+  const salt = crypto.randomBytes(16).toString("hex");
+  return salt + ":" + hashPassword(password, salt);
 }
 
-function buildUserResponse(
-  user:
-    | Awaited<ReturnType<typeof getUserByOpenId>>
-    | {
-        openId: string;
-        name?: string | null;
-        email?: string | null;
-        loginMethod?: string | null;
-        lastSignedIn?: Date | null;
-      },
-) {
+function verifyPassword(password: string, stored: string) {
+  const [salt, expected] = stored.split(":");
+  if (!salt || !expected) return false;
+  const actual = hashPassword(password, salt);
+  return crypto.timingSafeEqual(Buffer.from(actual, "hex"), Buffer.from(expected, "hex"));
+}
+
+function buildUserResponse(user: any) {
   return {
-    id: (user as any)?.id ?? null,
+    id: user?.id ?? null,
     openId: user?.openId ?? null,
     name: user?.name ?? null,
     email: user?.email ?? null,
     loginMethod: user?.loginMethod ?? null,
     lastSignedIn: (user?.lastSignedIn ?? new Date()).toISOString(),
+    role: user?.role ?? "user",
+    accountRole: user?.accountRole ?? "customer",
   };
 }
 
-export function registerOAuthRoutes(app: Express) {
-  app.get("/api/oauth/callback", async (req: Request, res: Response) => {
-    const code = getQueryParam(req, "code");
-    const state = getQueryParam(req, "state");
+function validateCredentials(email: unknown, password: unknown) {
+  if (typeof email !== "string" || !email.trim() || !email.includes("@")) return "A valid email is required.";
+  if (typeof password !== "string" || password.length < 6) return "Password must be at least 6 characters.";
+  return null;
+}
 
-    if (!code || !state) {
-      res.status(400).json({ error: "code and state are required" });
-      return;
-    }
+async function issueSession(req: Request, res: Response, user: any) {
+  const token = await sdk.createSessionToken(user.openId, { name: user.name || "", expiresInMs: ONE_YEAR_MS });
+  const cookieOptions = getSessionCookieOptions(req);
+  res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+  return { token, user: buildUserResponse(user) };
+}
 
+export function registerAuthRoutes(app: Express) {
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
     try {
-      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
-      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
-      await syncUser(userInfo);
-      const sessionToken = await sdk.createSessionToken(userInfo.openId!, {
-        name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
+      const { name, email, password } = req.body ?? {};
+      const validationError = validateCredentials(email, password);
+      if (validationError) {
+        res.status(400).json({ error: validationError });
+        return;
+      }
+      if (typeof name !== "string" || !name.trim()) {
+        res.status(400).json({ error: "Name is required." });
+        return;
+      }
+
+      const normalizedEmail = email.trim().toLowerCase();
+      const existing = await getUserByEmail(normalizedEmail);
+      if (existing) {
+        res.status(409).json({ error: "An account with this email already exists." });
+        return;
+      }
+
+      const user = await createLocalUser({
+        openId: `fixnow_${crypto.randomUUID()}`,
+        name: name.trim(),
+        email: normalizedEmail,
+        passwordHash: makePasswordHash(password),
       });
+      if (!user) throw new Error("Failed to create user");
 
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-
-      // Redirect to the frontend URL (Expo web on port 8081)
-      // Cookie is set with parent domain so it works across both 3000 and 8081 subdomains
-      const frontendUrl =
-        process.env.EXPO_WEB_PREVIEW_URL ||
-        process.env.EXPO_PACKAGER_PROXY_URL ||
-        "http://localhost:8081";
-      res.redirect(302, frontendUrl);
+      const session = await issueSession(req, res, user);
+      res.status(201).json(session);
     } catch (error) {
-      console.error("[OAuth] Callback failed", error);
-      res.status(500).json({ error: "OAuth callback failed" });
+      console.error("[Auth] Registration failed:", error);
+      res.status(500).json({ error: "Registration failed." });
     }
   });
 
-  app.get("/api/oauth/mobile", async (req: Request, res: Response) => {
-    const code = getQueryParam(req, "code");
-    const state = getQueryParam(req, "state");
-
-    if (!code || !state) {
-      res.status(400).json({ error: "code and state are required" });
-      return;
-    }
-
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
-      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
-      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
-      const user = await syncUser(userInfo);
+      const { email, password } = req.body ?? {};
+      const validationError = validateCredentials(email, password);
+      if (validationError) {
+        res.status(400).json({ error: validationError });
+        return;
+      }
 
-      const sessionToken = await sdk.createSessionToken(userInfo.openId!, {
-        name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
-      });
+      const user = await getUserByEmail(email.trim().toLowerCase());
+      if (!user || !user.passwordHash || !verifyPassword(password, user.passwordHash)) {
+        res.status(401).json({ error: "Invalid email or password." });
+        return;
+      }
 
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-
-      res.json({
-        app_session_id: sessionToken,
-        user: buildUserResponse(user),
-      });
+      const session = await issueSession(req, res, user);
+      res.json(session);
     } catch (error) {
-      console.error("[OAuth] Mobile exchange failed", error);
-      res.status(500).json({ error: "OAuth mobile exchange failed" });
+      console.error("[Auth] Login failed:", error);
+      res.status(500).json({ error: "Login failed." });
     }
   });
 
@@ -134,40 +113,28 @@ export function registerOAuthRoutes(app: Express) {
     res.json({ success: true });
   });
 
-  // Get current authenticated user - works with both cookie (web) and Bearer token (mobile)
   app.get("/api/auth/me", async (req: Request, res: Response) => {
     try {
       const user = await sdk.authenticateRequest(req);
       res.json({ user: buildUserResponse(user) });
-    } catch (error) {
-      console.error("[Auth] /api/auth/me failed:", error);
+    } catch {
       res.status(401).json({ error: "Not authenticated", user: null });
     }
   });
 
-  // Establish session cookie from Bearer token
-  // Used by iframe preview: frontend receives token via postMessage, then calls this endpoint
-  // to get a proper Set-Cookie response from the backend (3000-xxx domain)
   app.post("/api/auth/session", async (req: Request, res: Response) => {
     try {
-      // Authenticate using Bearer token from Authorization header
-      const user = await sdk.authenticateRequest(req);
-
-      // Get the token from the Authorization header to set as cookie
       const authHeader = req.headers.authorization || req.headers.Authorization;
       if (typeof authHeader !== "string" || !authHeader.startsWith("Bearer ")) {
         res.status(400).json({ error: "Bearer token required" });
         return;
       }
       const token = authHeader.slice("Bearer ".length).trim();
-
-      // Set cookie for this domain (3000-xxx)
+      const user = await sdk.authenticateRequest(req);
       const cookieOptions = getSessionCookieOptions(req);
       res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-
       res.json({ success: true, user: buildUserResponse(user) });
-    } catch (error) {
-      console.error("[Auth] /api/auth/session failed:", error);
+    } catch {
       res.status(401).json({ error: "Invalid token" });
     }
   });
