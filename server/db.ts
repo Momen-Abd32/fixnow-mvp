@@ -58,6 +58,36 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updates });
 }
 
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const results = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
+  return results[0];
+}
+
+export async function createLocalUser(input: {
+  openId: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+}) {
+  const db = await requireDb();
+  await db.insert(users).values({
+    openId: input.openId,
+    name: input.name,
+    email: input.email.toLowerCase(),
+    passwordHash: input.passwordHash,
+    loginMethod: "email",
+    lastSignedIn: new Date(),
+  });
+  return getUserByOpenId(input.openId);
+}
+
+export async function updateLastSignedIn(openId: string) {
+  const db = await requireDb();
+  await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.openId, openId));
+}
+
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) return undefined;
