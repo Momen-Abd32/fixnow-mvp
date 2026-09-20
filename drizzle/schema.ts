@@ -30,6 +30,7 @@ export const users = mysqlTable("users", {
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
+  passwordHash: varchar("passwordHash", { length: 255 }),
   phone: varchar("phone", { length: 32 }),
   profileImage: varchar("profileImage", { length: 1024 }),
   addresses: json("addresses").$type<Array<{ label: string; address: string; latitude?: number; longitude?: number }>>(),
