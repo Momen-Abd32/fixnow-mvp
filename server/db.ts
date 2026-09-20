@@ -79,6 +79,7 @@ export async function createLocalUser(input: {
     passwordHash: input.passwordHash,
     loginMethod: "email",
     lastSignedIn: new Date(),
+    role: ENV.adminEmail && input.email.toLowerCase() === ENV.adminEmail ? "admin" : "user",
   });
   return getUserByOpenId(input.openId);
 }
