@@ -291,7 +291,7 @@ export async function assignTechnician(requestId: number, technicianId: number) 
 
 export async function updateRequestStatus(requestId: number, status: RequestStatus, extras: { acceptedAt?: Date; completedAt?: Date; finalPrice?: number } = {}) {
   const db = await requireDb();
-  await db.update(serviceRequests).set({ status, ...extras }).where(eq(serviceRequests.id, requestId));
+  await db.update(serviceRequests).set({ status, ...extras }).where(eq(serviceRequests.id, requestId));\n  if (status === "COMPLETED") {\n    const detail = await getRequestDetail(requestId);\n    if (detail?.technician?.id) {\n      await db.update(technicianProfiles).set({ completedJobs: sql`${technicianProfiles.completedJobs} + 1` }).where(eq(technicianProfiles.id, detail.technician.id));\n    }\n  }
   return getRequestDetail(requestId);
 }
 
@@ -325,7 +325,7 @@ export async function getPaymentForRequest(requestId: number) {
 
 export async function markCashPaid(requestId: number) {
   const db = await requireDb();
-  await db.update(payments).set({ status: "paid", transactionId: `cash-${requestId}-${Date.now()}` }).where(eq(payments.requestId, requestId));
+  await db.update(payments).set({ status: "paid", transactionId: `cash-${requestId}-${Date.now()}` }).where(and(eq(payments.requestId, requestId), eq(payments.method, "cash"), eq(payments.status, "pending")));
   return updateRequestStatus(requestId, "PAID");
 }
 
