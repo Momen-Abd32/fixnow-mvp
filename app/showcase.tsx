@@ -13,9 +13,9 @@ const services = [
 ];
 
 const specialists = [
-  { name: "Ahmad K.", role: "Electrical specialist", rating: "4.9", jobs: "126 jobs", eta: "18 min" },
-  { name: "Omar S.", role: "Home maintenance", rating: "4.8", jobs: "94 jobs", eta: "25 min" },
-  { name: "Yazan H.", role: "AC specialist", rating: "4.9", jobs: "81 jobs", eta: "31 min" },
+  { name: "Verified demo profile", role: "Electrical specialist", rating: "4.9", jobs: "126 completed", eta: "18 min" },
+  { name: "Verified demo profile", role: "Home maintenance", rating: "4.8", jobs: "94 completed", eta: "25 min" },
+  { name: "Verified demo profile", role: "AC specialist", rating: "4.9", jobs: "81 completed", eta: "31 min" },
 ];
 
 export default function ShowcaseScreen() {
@@ -58,15 +58,20 @@ export default function ShowcaseScreen() {
           <Text style={[styles.heading, { color: colors.foreground }]}>Compare verified specialists before you choose</Text>
         </View>
         {specialists.map((person, index) => (
-          <Card key={person.name} style={styles.person}>
+          <Card key={person.role + index} style={styles.person}>
             <View style={[styles.avatar, { backgroundColor: colors.primary + "14" }]}><Text style={[styles.avatarText, { color: colors.primary }]}>{person.name[0]}</Text></View>
             <View style={styles.personMain}>
               <View style={styles.personRow}><Text style={[styles.personName, { color: colors.foreground }]}>{person.name}</Text><Chip label={index === 0 ? "TOP MATCH" : "VERIFIED"} tone={index === 0 ? "primary" : "success"} /></View>
               <Text style={[styles.personRole, { color: colors.muted }]}>{person.role}</Text>
-              <Text style={[styles.personMeta, { color: colors.muted }]}>★ {person.rating} · {person.jobs} · {person.eta} away</Text>
+              <Text style={[styles.personMeta, { color: colors.muted }]}>★ {person.rating} · {person.jobs} · {person.eta} away · demo data</Text>
             </View>
           </Card>
         ))}
+        <View style={styles.section}>
+          <Text style={[styles.eyebrow, { color: colors.primary }]}>ENGINEERING</Text>
+          <Text style={[styles.heading, { color: colors.foreground }]}>Built like a real product, not a landing page</Text>
+          <Text style={[styles.sub, { color: colors.muted }]}>Type-safe API boundaries, role-based access, explainable matching, controlled job states, safe AI triage, and a responsive operations surface.</Text>
+        </View>
         <Card style={styles.aiCard}>
           <View style={[styles.aiIcon, { backgroundColor: colors.primary }]}><MaterialIcons name="auto-awesome" size={23} color="#fff" /></View>
           <View style={styles.aiCopy}><Text style={[styles.aiTitle, { color: colors.foreground }]}>AI preliminary diagnosis</Text><Text style={[styles.aiBody, { color: colors.muted }]}>Describe the issue or add evidence. FixNow returns an estimate to help you choose the right service.</Text></View>
