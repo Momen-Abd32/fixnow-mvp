@@ -291,7 +291,8 @@ export async function assignTechnician(requestId: number, technicianId: number) 
 
 export async function updateRequestStatus(requestId: number, status: RequestStatus, extras: { acceptedAt?: Date; completedAt?: Date; finalPrice?: number } = {}) {
   const db = await requireDb();
-  await db.update(serviceRequests).set({ status, ...extras }).where(eq(serviceRequests.id, requestId));\n  if (status === "COMPLETED") {\n    const detail = await getRequestDetail(requestId);\n    if (detail?.technician?.id) {\n      await db.update(technicianProfiles).set({ completedJobs: sql`${technicianProfiles.completedJobs} + 1` }).where(eq(technicianProfiles.id, detail.technician.id));\n    }\n  }
+  await db.update(serviceRequests).set({ status, ...extras }).where(eq(serviceRequests.id, requestId));
+  if (status === "COMPLETED") {\n    const detail = await getRequestDetail(requestId);\n    if (detail?.technician?.id) {\n      await db.update(technicianProfiles).set({ completedJobs: sql`${technicianProfiles.completedJobs} + 1` }).where(eq(technicianProfiles.id, detail.technician.id));\n    }\n  }
   return getRequestDetail(requestId);
 }
 
