@@ -124,7 +124,7 @@ export const appRouter = router({
   technicians: router({
     myProfile: protectedProcedure.query(({ ctx }) => db.getTechnicianProfileByUser(ctx.user.id)),
     register: protectedProcedure.input(z.object({ serviceIds: z.array(z.number().int().positive()).min(1).max(8), serviceRadiusKm: z.number().int().min(1).max(50), hourlyRate: z.number().int().min(5).max(500), bio: z.string().max(600).optional(), documents: z.array(z.object({ name: z.string().max(120), url: z.string().max(1024), key: z.string().max(512) })).max(5).optional() })).mutation(({ ctx, input }) => db.registerTechnician({ ...input, userId: ctx.user.id })),
-    availability: protectedProcedure.input(z.object({ availability: z.boolean() })).mutation(({ ctx, input }) => db.setTechnicianAvailability(ctx.user.id, input.availability)),
+    availability: protectedProcedure.input(z.object({ availability: z.boolean() })).mutation(async ({ ctx, input }) => {\n      const profile = await db.getTechnicianProfileByUser(ctx.user.id);\n      if (!profile) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Create a technician profile before changing availability." });\n      if (profile.verificationStatus !== "verified") throw new TRPCError({ code: "FORBIDDEN", message: "Only verified technicians can go online." });\n      return db.setTechnicianAvailability(ctx.user.id, input.availability);\n    }),
     updateLocation: protectedProcedure.input(locationSchema).mutation(async ({ ctx, input }) => {
       const profile = await db.getTechnicianProfileByUser(ctx.user.id);
       if (!profile) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Create a technician profile before sharing location." });
@@ -172,7 +172,7 @@ export const appRouter = router({
     cancel: protectedProcedure.input(z.object({ requestId: z.number().int().positive(), reason: z.string().min(4).max(500) })).mutation(async ({ ctx, input }) => {
       const detail = await assertRequestAccess(ctx.user.id, input.requestId);
       if (!["PENDING", "TECHNICIAN_ASSIGNED", "TECHNICIAN_ACCEPTED", "ON_THE_WAY", "ARRIVED", "IN_PROGRESS"].includes(detail.request.status)) throw new TRPCError({ code: "BAD_REQUEST", message: "This request can no longer be cancelled." });
-      const result = await db.updateRequestStatus(input.requestId, "CANCELLED", { });
+      if (detail.request.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Only the customer can cancel this request." });\n      const result = await db.updateRequestStatus(input.requestId, "CANCELLED", { });
       if (detail.technician) await db.createNotification(detail.technician.userId, "Request cancelled", "The customer cancelled this request.", "status", input.requestId);
       return result;
     }),
