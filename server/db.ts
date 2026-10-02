@@ -227,7 +227,7 @@ export async function createRequest(input: {
       estimatedPrice: Math.max(estimatedMin, Math.min(estimatedMax, match.hourlyRate)),
     })));
   }
-  await createNotification(input.customerId, "Request received", matches.length ? `${matches.length} qualified technicians are ready to review your request.` : "We are expanding the nearby search for your request.", "request", requestId);
+  await createNotification(input.customerId, "Request received", matches.length ? `${matches.length} qualified technicians are ready to review your request.` : "No verified technician is currently within the configured service radius. You can try again later when availability changes.", "request", requestId);
   return { requestId, estimatedMin, estimatedMax, matchCount: matches.length };
 }
 
