@@ -34,7 +34,7 @@ export default function ShowcaseScreen() {
           </View>
         </View>
         <View style={styles.stats}>
-          {[["4.9", "avg. rating"], ["300+", "completed jobs"], ["5", "local matches"]].map(([value, label]) => (
+          {[["4", "core service types"], ["3", "demo specialists"], ["1", "end-to-end flow"]].map(([value, label]) => (
             <Card key={label} style={styles.stat}><Text style={[styles.statValue, { color: colors.foreground }]}>{value}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>{label}</Text></Card>
           ))}
         </View>
@@ -55,7 +55,7 @@ export default function ShowcaseScreen() {
         </View>
         <View style={styles.section}>
           <Text style={[styles.eyebrow, { color: colors.primary }]}>MATCHING</Text>
-          <Text style={[styles.heading, { color: colors.foreground }]}>Compare specialists before you choose</Text>
+          <Text style={[styles.heading, { color: colors.foreground }]}>Compare verified specialists before you choose</Text>
         </View>
         {specialists.map((person, index) => (
           <Card key={person.name} style={styles.person}>
@@ -71,7 +71,7 @@ export default function ShowcaseScreen() {
           <View style={[styles.aiIcon, { backgroundColor: colors.primary }]}><MaterialIcons name="auto-awesome" size={23} color="#fff" /></View>
           <View style={styles.aiCopy}><Text style={[styles.aiTitle, { color: colors.foreground }]}>AI preliminary diagnosis</Text><Text style={[styles.aiBody, { color: colors.muted }]}>Describe the issue or add evidence. FixNow returns an estimate to help you choose the right service.</Text></View>
         </Card>
-        <Text style={[styles.footer, { color: colors.muted }]}>Portfolio showcase · FixNow MVP · Expo + TypeScript + tRPC + Drizzle/MySQL</Text>
+        <Text style={[styles.footer, { color: colors.muted }]}>Portfolio showcase · FixNow MVP · Expo + React Native + TypeScript · tRPC · Drizzle/MySQL</Text>
       </ScrollView>
     </ScreenContainer>
   );
