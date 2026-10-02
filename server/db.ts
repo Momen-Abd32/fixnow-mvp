@@ -13,7 +13,8 @@ import {
   type RequestStatus,
   users,
 } from "../drizzle/schema";
-import { DEFAULT_CATEGORIES, haversineKm } from "../shared/types";
+import { DEFAULT_CATEGORIES } from "../shared/types";
+import { rankTechnicians, scoreTechnician } from "../shared/matching";
 import { ENV } from "./_core/env";
 
 let dbInstance: ReturnType<typeof drizzle> | null = null;
@@ -160,31 +161,39 @@ export async function findMatchingTechnicians(serviceId: number, location: { lat
     .innerJoin(users, eq(technicianProfiles.userId, users.id))
     .where(and(eq(technicianProfiles.availability, true), eq(technicianProfiles.verificationStatus, "verified")));
 
-  return candidates
+  const ranked = candidates
     .filter(({ profile }) => profile.serviceIds.includes(serviceId) && profile.latitude !== null && profile.longitude !== null)
-    .map(({ profile, user }) => {
-      const distanceKm = haversineKm(location, { latitude: profile.latitude!, longitude: profile.longitude! });
-      const isInRange = distanceKm <= profile.serviceRadiusKm;
-      const ratingFactor = Math.min(profile.rating / 5, 1) * 25;
-      const experienceFactor = Math.min(profile.completedJobs / 100, 1) * 15;
-      const distanceFactor = Math.max(0, 1 - distanceKm / Math.max(profile.serviceRadiusKm, 1)) * 45;
-      const availabilityFactor = profile.availability ? 15 : 0;
-      return {
-        technicianId: profile.id,
-        name: user.name ?? "Verified technician",
-        profileImage: user.profileImage,
-        rating: Number(profile.rating),
-        completedJobs: profile.completedJobs,
-        hourlyRate: profile.hourlyRate,
-        distanceKm: Number(distanceKm.toFixed(1)),
-        etaMinutes: Math.max(12, Math.round(distanceKm * 5 + 8)),
-        score: Number((ratingFactor + experienceFactor + distanceFactor + availabilityFactor).toFixed(1)),
-        isInRange,
-      };
-    })
-    .filter((candidate) => candidate.isInRange)
-    .sort((a, b) => b.score - a.score || a.distanceKm - b.distanceKm)
-    .slice(0, 5);
+    .map(({ profile }) =>
+      scoreTechnician(
+        {
+          technicianId: profile.id,
+          rating: Number(profile.rating),
+          completedJobs: profile.completedJobs,
+          serviceRadiusKm: profile.serviceRadiusKm,
+          availability: profile.availability,
+          latitude: profile.latitude!,
+          longitude: profile.longitude!,
+        },
+        location,
+      ),
+    )
+    .filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== null);
+
+  return rankTechnicians(ranked, 5).map((candidate) => {
+    const source = candidates.find(({ profile }) => profile.id === candidate.technicianId);
+    return {
+      technicianId: candidate.technicianId,
+      name: source?.user.name ?? "Verified technician",
+      profileImage: source?.user.profileImage,
+      rating: candidate.rating,
+      completedJobs: candidate.completedJobs,
+      hourlyRate: source?.profile.hourlyRate ?? 0,
+      distanceKm: candidate.distanceKm,
+      etaMinutes: candidate.etaMinutes,
+      score: candidate.score,
+      isInRange: true,
+    };
+  });
 }
 
 export async function createRequest(input: {
