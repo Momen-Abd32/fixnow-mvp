@@ -42,7 +42,7 @@ components/             Reusable accessible cards, controls and layouts
 hooks/                  Authentication, theme, and media-upload hooks
 server/                 tRPC procedures, storage layer and database helpers
 drizzle/                Drizzle schema and generated migrations
-shared/                 State machine, matching utility and shared domain types
+shared/                 State machine, explainable matching scorer and shared domain types
 tests/                  State-machine, matching and authentication tests
 docs/                   Architecture and operational documentation
 ```
@@ -174,6 +174,30 @@ A managed autoscaling deployment does not guarantee durable in-memory Socket.IO 
 - The state-machine policy blocks invalid request status escalation.
 
 Before an external launch, add a shared rate limiter, malware scanning for uploads, consent/audit logs, retention policy, privacy disclosures, verified emergency escalation, payment-processor webhooks, immutable admin audit trails, and a complaint/dispute workflow.
+
+## Recruiter demo flow
+
+For a portfolio walkthrough, use this path:
+
+1. Open **Showcase** and start a service request.
+2. Run the **AI preliminary assessment** with a realistic home-service description.
+3. Create the request and review the **explainable technician matches**.
+4. Select a technician and open the request timeline.
+5. Switch to the technician workspace to demonstrate acceptance and controlled status progression.
+6. Complete the job, confirm the MVP cash payment, and submit a review.
+7. Open **Admin** to demonstrate verification, request monitoring, and review moderation.
+
+Demo profiles and showcase metrics are explicitly labelled as demo data; the product does not present fabricated real-world customers or technicians as production users.
+
+## Quality gates
+
+GitHub Actions runs on pushes and pull requests to `main` and executes:
+
+- `pnpm check`
+- `pnpm test`
+- `pnpm build:web`
+
+The matching scorer lives in `shared/matching.ts` and is unit tested independently from the database. Request lifecycle rules are exposed through `shared/state-machine.ts` and covered by transition tests.
 
 ## Deployment
 
