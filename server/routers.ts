@@ -124,7 +124,12 @@ export const appRouter = router({
   technicians: router({
     myProfile: protectedProcedure.query(({ ctx }) => db.getTechnicianProfileByUser(ctx.user.id)),
     register: protectedProcedure.input(z.object({ serviceIds: z.array(z.number().int().positive()).min(1).max(8), serviceRadiusKm: z.number().int().min(1).max(50), hourlyRate: z.number().int().min(5).max(500), bio: z.string().max(600).optional(), documents: z.array(z.object({ name: z.string().max(120), url: z.string().max(1024), key: z.string().max(512) })).max(5).optional() })).mutation(({ ctx, input }) => db.registerTechnician({ ...input, userId: ctx.user.id })),
-    availability: protectedProcedure.input(z.object({ availability: z.boolean() })).mutation(async ({ ctx, input }) => {\n      const profile = await db.getTechnicianProfileByUser(ctx.user.id);\n      if (!profile) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Create a technician profile before changing availability." });\n      if (profile.verificationStatus !== "verified") throw new TRPCError({ code: "FORBIDDEN", message: "Only verified technicians can go online." });\n      return db.setTechnicianAvailability(ctx.user.id, input.availability);\n    }),
+    availability: protectedProcedure.input(z.object({ availability: z.boolean() })).mutation(async ({ ctx, input }) => {
+      const profile = await db.getTechnicianProfileByUser(ctx.user.id);
+      if (!profile) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Create a technician profile before changing availability." });
+      if (profile.verificationStatus !== "verified") throw new TRPCError({ code: "FORBIDDEN", message: "Only verified technicians can go online." });
+      return db.setTechnicianAvailability(ctx.user.id, input.availability);
+    }),
     updateLocation: protectedProcedure.input(locationSchema).mutation(async ({ ctx, input }) => {
       const profile = await db.getTechnicianProfileByUser(ctx.user.id);
       if (!profile) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Create a technician profile before sharing location." });
@@ -146,8 +151,13 @@ export const appRouter = router({
     chooseTechnician: protectedProcedure.input(z.object({ requestId: z.number().int().positive(), technicianId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       const detail = await assertRequestAccess(ctx.user.id, input.requestId);
       if (detail.request.customerId !== ctx.user.id || detail.request.status !== "PENDING") throw new TRPCError({ code: "BAD_REQUEST", message: "This request cannot be assigned." });
-      const eligible = await db.getRequestMatches(input.requestId);
-      if (!eligible.some((entry) => entry.match.technicianId === input.technicianId)) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a technician from the presented matches." });
+      const currentMatches = await db.findMatchingTechnicians(detail.request.serviceId, {
+        latitude: detail.request.latitude,
+        longitude: detail.request.longitude,
+      });
+      if (!currentMatches.some((entry) => entry.technicianId === input.technicianId)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a currently verified and available technician within the service radius." });
+      }
       return db.assignTechnician(input.requestId, input.technicianId);
     }),
     accept: protectedProcedure.input(z.object({ requestId: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
@@ -172,7 +182,8 @@ export const appRouter = router({
     cancel: protectedProcedure.input(z.object({ requestId: z.number().int().positive(), reason: z.string().min(4).max(500) })).mutation(async ({ ctx, input }) => {
       const detail = await assertRequestAccess(ctx.user.id, input.requestId);
       if (!["PENDING", "TECHNICIAN_ASSIGNED", "TECHNICIAN_ACCEPTED", "ON_THE_WAY", "ARRIVED", "IN_PROGRESS"].includes(detail.request.status)) throw new TRPCError({ code: "BAD_REQUEST", message: "This request can no longer be cancelled." });
-      if (detail.request.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Only the customer can cancel this request." });\n      const result = await db.updateRequestStatus(input.requestId, "CANCELLED", { });
+      if (detail.request.customerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Only the customer can cancel this request." });
+      const result = await db.updateRequestStatus(input.requestId, "CANCELLED", { });
       if (detail.technician) await db.createNotification(detail.technician.userId, "Request cancelled", "The customer cancelled this request.", "status", input.requestId);
       return result;
     }),
@@ -195,6 +206,10 @@ export const appRouter = router({
       const detail = await assertRequestAccess(ctx.user.id, input.requestId);
       if (detail.request.customerId !== ctx.user.id || detail.request.status !== "COMPLETED" || !detail.request.technicianId || !detail.request.finalPrice) throw new TRPCError({ code: "BAD_REQUEST", message: "Payment is available once the technician completes the job." });
       if (input.method !== "cash") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Card and wallet payments are ready for processor integration. Cash is available in this MVP." });
+      const existingPayment = await db.getPaymentForRequest(input.requestId);
+      if (existingPayment) {
+        throw new TRPCError({ code: "CONFLICT", message: "A payment record already exists for this request." });
+      }
       const id = await db.createPayment({ requestId: input.requestId, customerId: ctx.user.id, technicianId: detail.request.technicianId, amount: detail.request.finalPrice, method: input.method });
       return { paymentId: id, method: input.method, status: "pending" };
     }),
