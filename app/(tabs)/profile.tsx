@@ -13,6 +13,8 @@ export default function ProfileScreen() {
   const { user, loading, isAuthenticated, logout } = useAuth();
   const profile = trpc.profile.me.useQuery(undefined, { enabled: isAuthenticated, retry: false });
   const notifications = useMemo(() => profile.data?.notifications ?? [], [profile.data?.notifications]);
+  const technicianJobs = trpc.technicians.jobs.useQuery(undefined, { enabled: Boolean(profile.data?.technician), refetchInterval: 12_000, retry: false });
+  const availability = trpc.technicians.availability.useMutation({ onSuccess: () => void profile.refetch() });
   if (loading) return <ScreenContainer className="items-center justify-center"><ActivityIndicator color={colors.primary} /></ScreenContainer>;
   if (!user) return <ScreenContainer className="p-5"><View style={styles.guest}><FixNowMark /><LoginRequired body="Sign in securely to manage addresses, notifications, payments, service history, and technician work." /></View></ScreenContainer>;
 
@@ -27,6 +29,16 @@ export default function ProfileScreen() {
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
           <View style={styles.accountLine}><MaterialIcons name="location-on" size={18} color={colors.primary} /><Text style={[styles.accountLineText, { color: colors.foreground }]}>{profile.data?.user.addresses?.[0]?.address ?? "Add a saved address when placing your first request"}</Text></View>
         </Card>
+
+        {profile.data?.technician ? <Card style={styles.techCard}>
+          <View style={styles.techHeader}>
+            <View style={[styles.techIcon, { backgroundColor: `${colors.primary}12` }]}><MaterialIcons name="handyman" size={20} color={colors.primary} /></View>
+            <View style={styles.techCopy}><Text style={[styles.techTitle, { color: colors.foreground }]}>Technician workspace</Text><Text style={[styles.techMeta, { color: colors.muted }]}>{profile.data.technician.verificationStatus === "verified" ? "Verified profile" : "Verification pending"} · {technicianJobs.data?.length ?? 0} assigned jobs</Text></View>
+            <Pressable accessibilityRole="switch" accessibilityState={{ checked: profile.data.technician.availability }} disabled={availability.isPending || profile.data.technician.verificationStatus !== "verified"} onPress={() => void availability.mutateAsync({ availability: !profile.data.technician?.availability })} style={[styles.availability, { backgroundColor: profile.data.technician.availability ? colors.success : colors.border }]}><View style={styles.availabilityKnob} /></Pressable>
+          </View>
+          <View style={[styles.techStatus, { borderTopColor: colors.border }]}><Text style={[styles.techStatusText, { color: colors.muted }]}>{profile.data.technician.availability ? "Available for new service requests" : "Not accepting new requests"}</Text><Pressable onPress={() => void technicianJobs.refetch()}><Text style={[styles.link, { color: colors.primary }]}>Refresh jobs</Text></Pressable></View>
+          {technicianJobs.data?.slice(0, 2).map((job) => <Pressable key={job.request.id} onPress={() => router.push({ pathname: "/request/[id]", params: { id: String(job.request.id) } })} style={({ pressed }) => [styles.techJob, { borderBottomColor: colors.border, opacity: pressed ? 0.65 : 1 }]}><View style={styles.techJobCopy}><Text style={[styles.techJobTitle, { color: colors.foreground }]}>{job.category.name} · #{job.request.id}</Text><Text style={[styles.techMeta, { color: colors.muted }]}>{job.request.status.replaceAll("_", " ")} · {shortDate(job.request.updatedAt)}</Text></View><MaterialIcons name="chevron-right" size={19} color={colors.muted} /></Pressable>)}
+        </Card> : null}
 
         <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Service settings</Text></View>
         <Card style={styles.menuCard}>
@@ -77,5 +89,18 @@ const styles = StyleSheet.create({
   notificationTitle: { fontSize: 13, lineHeight: 18, fontWeight: "800" },
   notificationBody: { fontSize: 11, lineHeight: 16 },
   date: { fontSize: 10, lineHeight: 14, marginTop: 2 },
+  techCard: { gap: 10 },
+  techHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
+  techIcon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  techCopy: { flex: 1, gap: 2 },
+  techTitle: { fontSize: 14, lineHeight: 19, fontWeight: "800" },
+  techMeta: { fontSize: 10, lineHeight: 15 },
+  availability: { width: 48, height: 28, borderRadius: 15, padding: 3, justifyContent: "center" },
+  availabilityKnob: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#FFFFFF", alignSelf: "flex-end" },
+  techStatus: { borderTopWidth: 1, paddingTop: 9, flexDirection: "row", justifyContent: "space-between", gap: 8 },
+  techStatusText: { flex: 1, fontSize: 10, lineHeight: 15 },
+  techJob: { minHeight: 48, borderBottomWidth: 1, flexDirection: "row", alignItems: "center", gap: 8 },
+  techJobCopy: { flex: 1, gap: 2 },
+  techJobTitle: { fontSize: 12, lineHeight: 16, fontWeight: "800" },
   help: { fontSize: 11, lineHeight: 16, textAlign: "center", paddingHorizontal: 16, marginTop: 6 },
 });
