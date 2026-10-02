@@ -202,7 +202,7 @@ export const appRouter = router({
       const detail = await assertRequestAccess(ctx.user.id, input.requestId);
       if (detail.request.customerId !== ctx.user.id || detail.request.status !== "COMPLETED") throw new TRPCError({ code: "BAD_REQUEST", message: "This cash payment cannot be confirmed." });
       const payment = await db.getPaymentForRequest(input.requestId);
-      if (!payment || payment.method !== "cash") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Create a cash payment record first." });
+      if (!payment || payment.method !== "cash" || payment.status !== "pending") throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Create a pending cash payment record first." });
       const result = await db.markCashPaid(input.requestId);
       if (detail.technician) await db.createNotification(detail.technician.userId, "Payment confirmed", "The customer confirmed cash payment for the completed job.", "payment", input.requestId);
       return result;
