@@ -30,7 +30,7 @@ export default function ShowcaseScreen() {
           <Text style={styles.heroBody}>A marketplace experience for finding verified local specialists, getting a preliminary AI assessment, and tracking a service from request to review.</Text>
           <View style={styles.heroActions}>
             <View style={styles.actionFlex}><PrimaryButton label="Create a request" icon="arrow-forward" onPress={() => router.push("/request/new")} /></View>
-            <Pressable onPress={() => router.push("/")} style={styles.secondary}><Text style={styles.secondaryText}>Explore app</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Explore app" onPress={() => router.push("/")} style={styles.secondary}><Text style={styles.secondaryText}>Explore app</Text></Pressable>
           </View>
         </View>
         <View style={styles.stats}>
@@ -45,7 +45,7 @@ export default function ShowcaseScreen() {
         </View>
         <View style={styles.grid}>
           {services.map((service) => (
-            <Pressable key={service.name} onPress={() => router.push("/request/new")} style={({ pressed }) => [styles.service, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.75 : 1 }]}>
+            <Pressable key={service.name} accessibilityRole="button" accessibilityLabel={`Create a ${service.name} request`} onPress={() => router.push("/request/new")} style={({ pressed }) => [styles.service, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.75 : 1 }]}>
               <View style={[styles.icon, { backgroundColor: colors.primary + "14" }]}><MaterialIcons name={service.icon as any} size={22} color={colors.primary} /></View>
               <Text style={[styles.serviceName, { color: colors.foreground }]}>{service.name}</Text>
               <Text style={[styles.note, { color: colors.muted }]}>{service.note}</Text>
@@ -88,12 +88,12 @@ const styles = StyleSheet.create({
   hero: { borderRadius: 30, padding: 25, gap: 13, overflow: "hidden" },
   heroTitle: { color: "#fff", fontSize: 38, lineHeight: 42, fontWeight: "900", letterSpacing: -1.4, marginTop: 5 },
   heroBody: { color: "rgba(255,255,255,0.72)", fontSize: 14, lineHeight: 21, maxWidth: 680 },
-  heroActions: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 7 },
-  actionFlex: { minWidth: 190 },
+  heroActions: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 7, flexWrap: "wrap" },
+  actionFlex: { minWidth: 190, flexGrow: 1, maxWidth: 250 },
   secondary: { minHeight: 48, paddingHorizontal: 18, borderRadius: 15, justifyContent: "center", borderWidth: 1, borderColor: "rgba(255,255,255,0.2)" },
   secondaryText: { color: "#fff", fontSize: 14, fontWeight: "800" },
-  stats: { flexDirection: "row", gap: 10 },
-  stat: { flex: 1, minHeight: 88, justifyContent: "center" },
+  stats: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  stat: { flex: 1, minWidth: 150, minHeight: 88, justifyContent: "center" },
   statValue: { fontSize: 23, fontWeight: "900" },
   statLabel: { fontSize: 11, marginTop: 2 },
   section: { gap: 4, marginTop: 4 },
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   avatarText: { fontSize: 19, fontWeight: "900" },
   personMain: { flex: 1, marginLeft: 12, gap: 2 },
   personRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
-  personName: { fontSize: 14, fontWeight: "900" },
+  personName: { flex: 1, fontSize: 14, fontWeight: "900" },
   personRole: { fontSize: 11 },
   personMeta: { fontSize: 11, marginTop: 2 },
   aiCard: { flexDirection: "row", alignItems: "center", gap: 13, padding: 18 },
