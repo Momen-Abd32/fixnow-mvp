@@ -325,7 +325,7 @@ export async function updateRequestStatus(
     await db
       .update(technicianProfiles)
       .set({ completedJobs: sql`${technicianProfiles.completedJobs} + 1` })
-      .where(and(eq(technicianProfiles.id, current[0].technicianId), eq(technicianProfiles.completedJobs, sql`(SELECT completedJobs FROM technician_profiles WHERE id = ${current[0].technicianId})`)));
+      .where(eq(technicianProfiles.id, current[0].technicianId));
   }
   return getRequestDetail(requestId);
 }
