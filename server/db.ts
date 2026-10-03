@@ -13,7 +13,7 @@ import {
   type RequestStatus,
   users,
 } from "../drizzle/schema";
-import { DEFAULT_CATEGORIES } from "../shared/types";
+import { DEFAULT_CATEGORIES, canTransition } from "../shared/types";
 import { rankTechnicians, scoreTechnician } from "../shared/matching";
 import { ENV } from "./_core/env";
 
