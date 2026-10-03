@@ -282,21 +282,50 @@ export async function listRequestsForTechnician(userId: number) {
 
 export async function assignTechnician(requestId: number, technicianId: number) {
   const db = await requireDb();
-  await db.update(serviceRequests).set({ technicianId, status: "TECHNICIAN_ASSIGNED" }).where(and(eq(serviceRequests.id, requestId), eq(serviceRequests.status, "PENDING")));
   const profile = await db.select().from(technicianProfiles).where(eq(technicianProfiles.id, technicianId)).limit(1);
   if (!profile[0]) throw new Error("Technician was not found.");
+  if (profile[0].verificationStatus !== "verified" || !profile[0].availability) {
+    throw new Error("Technician is not currently verified and available.");
+  }
+
+  const updated = await db
+    .update(serviceRequests)
+    .set({ technicianId, status: "TECHNICIAN_ASSIGNED" })
+    .where(and(eq(serviceRequests.id, requestId), eq(serviceRequests.status, "PENDING")));
+  if (!updated[0]?.affectedRows) throw new Error("This request is no longer available for assignment.");
+
   await createNotification(profile[0].userId, "New job opportunity", "A customer selected you for a nearby service request.", "request", requestId);
   return getRequestDetail(requestId);
 }
 
-export async function updateRequestStatus(requestId: number, status: RequestStatus, extras: { acceptedAt?: Date; completedAt?: Date; finalPrice?: number } = {}) {
+export async function updateRequestStatus(
+  requestId: number,
+  status: RequestStatus,
+  extras: { acceptedAt?: Date; completedAt?: Date; finalPrice?: number } = {},
+) {
   const db = await requireDb();
-  await db.update(serviceRequests).set({ status, ...extras }).where(eq(serviceRequests.id, requestId));
-  if (status === "COMPLETED") {
-    const detail = await getRequestDetail(requestId);
-    if (detail?.technician?.id) {
-      await db.update(technicianProfiles).set({ completedJobs: sql`${technicianProfiles.completedJobs} + 1` }).where(eq(technicianProfiles.id, detail.technician.id));
-    }
+  const current = await db
+    .select({ status: serviceRequests.status, technicianId: serviceRequests.technicianId })
+    .from(serviceRequests)
+    .where(eq(serviceRequests.id, requestId))
+    .limit(1);
+  if (!current[0]) throw new Error("Service request was not found.");
+  if (current[0].status === status) return getRequestDetail(requestId);
+  if (!canTransition(current[0].status as RequestStatus, status)) {
+    throw new Error(`Invalid request status transition: ${current[0].status} -> ${status}`);
+  }
+
+  const updated = await db
+    .update(serviceRequests)
+    .set({ status, ...extras })
+    .where(and(eq(serviceRequests.id, requestId), eq(serviceRequests.status, current[0].status)));
+  if (!updated[0]?.affectedRows) throw new Error("Request changed before the status update could be saved.");
+
+  if (status === "COMPLETED" && current[0].technicianId) {
+    await db
+      .update(technicianProfiles)
+      .set({ completedJobs: sql`${technicianProfiles.completedJobs} + 1` })
+      .where(and(eq(technicianProfiles.id, current[0].technicianId), eq(technicianProfiles.completedJobs, sql`(SELECT completedJobs FROM technician_profiles WHERE id = ${current[0].technicianId})`)));
   }
   return getRequestDetail(requestId);
 }
@@ -319,6 +348,8 @@ export async function addMessage(input: { requestId: number; senderId: number; r
 
 export async function createPayment(input: { requestId: number; customerId: number; technicianId: number; amount: number; method: "cash" | "card" | "wallet" }) {
   const db = await requireDb();
+  const existing = await getPaymentForRequest(input.requestId);
+  if (existing) throw new Error("A payment record already exists for this request.");
   const result = await db.insert(payments).values(input);
   return Number(result[0].insertId);
 }
@@ -331,12 +362,23 @@ export async function getPaymentForRequest(requestId: number) {
 
 export async function markCashPaid(requestId: number) {
   const db = await requireDb();
-  await db.update(payments).set({ status: "paid", transactionId: `cash-${requestId}-${Date.now()}` }).where(and(eq(payments.requestId, requestId), eq(payments.method, "cash"), eq(payments.status, "pending")));
+  const payment = await getPaymentForRequest(requestId);
+  if (!payment || payment.method !== "cash" || payment.status !== "pending") throw new Error("No pending cash payment exists for this request.");
+  const updated = await db
+    .update(payments)
+    .set({ status: "paid", transactionId: `cash-${requestId}-${Date.now()}` })
+    .where(and(eq(payments.id, payment.id), eq(payments.status, "pending")));
+  if (!updated[0]?.affectedRows) throw new Error("Payment was already processed.");
   return updateRequestStatus(requestId, "PAID");
 }
 
 export async function createReview(input: { customerId: number; technicianId: number; requestId: number; rating: number; comment?: string }) {
   const db = await requireDb();
+  if (input.rating < 1 || input.rating > 5) throw new Error("Rating must be between 1 and 5.");
+  const detail = await getRequestDetail(input.requestId);
+  if (!detail || detail.request.customerId !== input.customerId || detail.request.technicianId !== input.technicianId || detail.request.status !== "PAID") {
+    throw new Error("A review is only valid for the paid request owner and assigned technician.");
+  }
   await db.insert(reviews).values(input);
   const scores = await db.select({ rating: reviews.rating }).from(reviews).where(eq(reviews.technicianId, input.technicianId));
   const average = scores.reduce((total, review) => total + review.rating, 0) / scores.length;
