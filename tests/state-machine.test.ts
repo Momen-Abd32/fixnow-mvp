@@ -21,4 +21,10 @@ describe("request state machine", () => {
     expect(canTransition("PAID", "CANCELLED")).toBe(false);
     expect(canTransition("REVIEWED", "CANCELLED")).toBe(false);
   });
+  it("covers payment and review guards in the lifecycle", () => {
+    expect(canTransition("COMPLETED", "PAID")).toBe(true);
+    expect(canTransition("PAID", "REVIEWED")).toBe(true);
+    expect(canTransition("COMPLETED", "REVIEWED")).toBe(false);
+    expect(canTransition("REVIEWED", "COMPLETED")).toBe(false);
+  });
 });
