@@ -28,5 +28,11 @@ jobs:
       - name: Install
         run: pnpm install --no-frozen-lockfile
 
-      - name: Final QA gate
-        run: pnpm qa
+      - name: Type-check
+        run: pnpm check
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Web build
+        run: pnpm build:web
