@@ -102,6 +102,9 @@ pnpm check
 # Run unit tests
 pnpm test
 
+# Run the complete pre-live QA gate
+pnpm qa
+
 # Open the native bundle on a connected device/emulator
 pnpm android
 # or
@@ -189,15 +192,18 @@ For a portfolio walkthrough, use this path:
 
 Demo profiles and showcase metrics are explicitly labelled as demo data; the product does not present fabricated real-world customers or technicians as production users.
 
-## Quality gates
+## Final QA checklist
 
-GitHub Actions runs on pushes and pull requests to `main` and executes:
+Before the live deployment step, verify the same release candidate with the following gates:
 
-- `pnpm check`
-- `pnpm test`
-- `pnpm build:web`
+- **UI/UX:** Showcase, request creation, matching, timeline, technician workspace, chat, payment/review, and Admin are usable on narrow mobile widths and web; loading, error, empty, and permission states are handled.
+- **Customer flow:** sign in → diagnose → create request → compare matches → choose technician → follow status → cash payment → review.
+- **Technician flow:** verified profile → availability → assigned job → accept → on-the-way → arrived → working → completed.
+- **Admin flow:** metrics → verification queue → request monitoring → review visibility/moderation.
+- **Security:** authenticated ownership checks, role checks, upload limits, verified-technician availability, controlled state transitions, and payment/review preconditions.
+- **Automated gates:** `pnpm check`, `pnpm test`, and `pnpm build:web` (or the combined `pnpm qa`) must complete successfully on the final commit.
 
-The matching scorer lives in `shared/matching.ts` and is unit tested independently from the database. Request lifecycle rules are exposed through `shared/state-machine.ts` and covered by transition tests.
+GitHub Actions is configured to run the automated gates on pushes and pull requests to `main`. A successful workflow run is the final CI verification; absence of a run should not be treated as a pass.
 
 ## Deployment
 
