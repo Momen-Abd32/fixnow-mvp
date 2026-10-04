@@ -1,7 +1,7 @@
 {
   "buildCommand": "pnpm build:web",
   "outputDirectory": "dist",
-  "installCommand": "pnpm install --frozen-lockfile",
+  "installCommand": "pnpm install --no-frozen-lockfile",
   "framework": null,
   "rewrites": [
     { "source": "/showcase", "destination": "/showcase" }
