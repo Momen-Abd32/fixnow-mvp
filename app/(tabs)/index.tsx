@@ -27,7 +27,7 @@ export default function HomeScreen() {
 
         <View style={[styles.hero, { backgroundColor: colors.foreground }]}>
           <View style={styles.heroTop}><Chip label={t("LOCAL HOME SERVICES")} tone="primary" /><View style={styles.heroIcon}><MaterialIcons name="bolt" size={22} color="#FFFFFF" /></View></View>
-          <Text style={styles.heroTitle}>A better fix{`\n`}starts here.</Text>
+          <Text style={[styles.heroTitle, { color: colors.foreground }]}>{t("A better fix")}{"\n"}{t("starts here.")}</Text>
           <Text style={[styles.heroBody, { color: colors.muted }]}>{t("Tell us what is wrong, choose a verified specialist, and follow every step until the job is done.")}</Text>
           <View style={styles.heroAction}><PrimaryButton label={t("Start a service request")} icon="arrow-forward" onPress={() => goToRequest()} /></View>
         </View>
@@ -47,7 +47,7 @@ export default function HomeScreen() {
           keyExtractor={(item) => String(item.id)}
           columnWrapperStyle={styles.categoryRow}
           contentContainerStyle={styles.categoryList}
-          renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={`Request ${item.name}`} onPress={() => goToRequest(item.id)} style={({ pressed }) => [styles.category, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}><View style={[styles.categoryIcon, { backgroundColor: `${colors.primary}12` }]}><MaterialIcons name={item.icon as any} size={22} color={colors.primary} /></View><Text style={[styles.categoryName, { color: colors.foreground }]} numberOfLines={1}>{item.name}</Text><Text style={[styles.categoryPrice, { color: colors.muted }]}>{item.basePriceMin}–{item.basePriceMax} JOD</Text></Pressable>}
+          renderItem={({ item }) => <Pressable accessibilityRole="button" accessibilityLabel={`Request ${item.name}`} onPress={() => goToRequest(item.id)} style={({ pressed }) => [styles.category, { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 }]}><View style={[styles.categoryIcon, { backgroundColor: `${colors.primary}12` }]}><MaterialIcons name={item.icon as any} size={22} color={colors.primary} /></View><Text style={[styles.categoryName, { color: colors.foreground }]} numberOfLines={1}>{t(item.name)}</Text><Text style={[styles.categoryPrice, { color: colors.muted }]}>{item.basePriceMin}–{item.basePriceMax} JOD</Text></Pressable>}
         /> : null}
 
         <Card style={styles.emergencyCard}>
