@@ -27,7 +27,7 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
-async function startServer() {
+export function createApp() {
   const app = express();
   const server = createServer(app);
 
@@ -70,16 +70,4 @@ async function startServer() {
     }),
   );
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
-
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-  }
-
-  server.listen(port, () => {
-    console.log(`[api] server listening on port ${port}`);
-  });
-}
-
-startServer().catch(console.error);
+  return { app, server };\n}\n\nif (process.env.VERCEL !== "1") {\n  const { server } = createApp();\n  const preferredPort = parseInt(process.env.PORT || "3000");\n  findAvailablePort(preferredPort).then((port) => {\n    server.listen(port, () => {\n      console.log(`[api] server listening on port ${port}`);\n    });\n  }).catch(console.error);\n}\n
