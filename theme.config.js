@@ -1,14 +1,26 @@
 /** @type {const} */
+const darkPalette = {
+  primary: "#36D4C7",
+  background: "#05080A",
+  surface: "#10161A",
+  foreground: "#FFFFFF",
+  muted: "#FFFFFF",
+  border: "#334047",
+  success: "#5BD3A8",
+  warning: "#FFC15C",
+  error: "#FF8585",
+};
+
 const themeColors = {
-  primary: { light: "#005A56", dark: "#36D4C7" },
-  background: { light: "#FFFFFF", dark: "#000000" },
-  surface: { light: "#FFFFFF", dark: "#111111" },
-  foreground: { light: "#000000", dark: "#FFFFFF" },
-  muted: { light: "#000000", dark: "#FFFFFF" },
-  border: { light: "#BBBBBB", dark: "#444444" },
-  success: { light: "#08704F", dark: "#5BD3A8" },
-  warning: { light: "#8A4F00", dark: "#FFC15C" },
-  error: { light: "#A92F2F", dark: "#FF8585" },
+  primary: { light: darkPalette.primary, dark: darkPalette.primary },
+  background: { light: darkPalette.background, dark: darkPalette.background },
+  surface: { light: darkPalette.surface, dark: darkPalette.surface },
+  foreground: { light: darkPalette.foreground, dark: darkPalette.foreground },
+  muted: { light: darkPalette.muted, dark: darkPalette.muted },
+  border: { light: darkPalette.border, dark: darkPalette.border },
+  success: { light: darkPalette.success, dark: darkPalette.success },
+  warning: { light: darkPalette.warning, dark: darkPalette.warning },
+  error: { light: darkPalette.error, dark: darkPalette.error },
 };
 
 module.exports = { themeColors };
