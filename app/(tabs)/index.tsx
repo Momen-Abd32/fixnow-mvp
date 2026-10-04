@@ -27,8 +27,8 @@ export default function HomeScreen() {
 
         <View style={[styles.hero, { backgroundColor: colors.foreground }]}>
           <View style={styles.heroTop}><Chip label={t("LOCAL HOME SERVICES")} tone="primary" /><View style={styles.heroIcon}><MaterialIcons name="bolt" size={22} color="#FFFFFF" /></View></View>
-          <Text style={[styles.heroTitle, { color: colors.foreground }]}>{t("A better fix")}{"\n"}{t("starts here.")}</Text>
-          <Text style={[styles.heroBody, { color: colors.muted }]}>{t("Tell us what is wrong, choose a verified specialist, and follow every step until the job is done.")}</Text>
+          <Text style={[styles.heroTitle, { color: "#000000" }]}>{t("A better fix")}{"\n"}{t("starts here.")}</Text>
+          <Text style={[styles.heroBody, { color: "#000000" }]}>{t("Tell us what is wrong, choose a verified specialist, and follow every step until the job is done.")}</Text>
           <View style={styles.heroAction}><PrimaryButton label={t("Start a service request")} icon="arrow-forward" onPress={() => goToRequest()} /></View>
         </View>
 
@@ -69,8 +69,8 @@ const styles = StyleSheet.create({
   hero: { borderRadius: 28, padding: 22, gap: 12, overflow: "hidden" },
   heroTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   heroIcon: { width: 39, height: 39, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.13)", alignItems: "center", justifyContent: "center" },
-  heroTitle: { color: "#FFFFFF", fontSize: 31, lineHeight: 36, fontWeight: "800", letterSpacing: -1.1, marginTop: 7 },
-  heroBody: { color: "#FFFFFF", fontSize: 14, lineHeight: 21, maxWidth: 300 },
+  heroTitle: { color: "#000000", fontSize: 31, lineHeight: 36, fontWeight: "800", letterSpacing: -1.1, marginTop: 7 },
+  heroBody: { color: "#000000", fontSize: 14, lineHeight: 21, maxWidth: 300 },
   heroAction: { marginTop: 7, alignSelf: "flex-start", minWidth: 210 },
   diagnosis: { borderWidth: 1, borderRadius: 20, padding: 15, flexDirection: "row", alignItems: "center", gap: 12 },
   diagnosisIcon: { width: 44, height: 44, borderRadius: 15, alignItems: "center", justifyContent: "center" },
