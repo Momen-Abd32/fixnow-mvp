@@ -70,7 +70,7 @@ export const appRouter = router({
     }),
   }),
   catalog: router({
-    list: publicProcedure.input(z.object({ includeInactive: z.boolean().optional() }).optional()).query((input) => db.listCategories(input.input?.includeInactive)),
+    list: publicProcedure.input(z.object({ includeInactive: z.boolean().optional() }).optional()).query(({ input }) => db.listCategories(input?.includeInactive)),
     create: adminProcedure.input(z.object({ name: z.string().min(2).max(120), slug: z.string().regex(/^[a-z0-9-]+$/), description: z.string().min(8).max(600), icon: z.string().min(2).max(48), basePriceMin: z.number().int().positive(), basePriceMax: z.number().int().positive() })).mutation(async ({ input }) => {
       if (input.basePriceMin > input.basePriceMax) throw new TRPCError({ code: "BAD_REQUEST", message: "Minimum price cannot exceed maximum price." });
       const connection = await db.getDb();
@@ -237,7 +237,7 @@ export const appRouter = router({
     setVerification: adminProcedure.input(z.object({ technicianId: z.number().int().positive(), verificationStatus: z.enum(["pending", "verified", "rejected"]) })).mutation(({ input }) => db.setVerification(input.technicianId, input.verificationStatus)),
     requests: adminProcedure.query(() => db.listAllRequests()),
     reviews: adminProcedure.query(() => db.listReviewsForAdmin()),
-    setReviewVisibility: adminProcedure.input(z.object({ reviewId: z.number().int().positive(), visible: z.boolean() })).mutation(({ input }) => db.setReviewVisibility(input.reviewId, input.verificationStatus)),
+    setReviewVisibility: adminProcedure.input(z.object({ reviewId: z.number().int().positive(), visible: z.boolean() })).mutation(({ input }) => db.setReviewVisibility(input.reviewId, input.visible)),
   }),
 });
 
