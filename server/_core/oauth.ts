@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const.js";
 import type { Express, Request, Response } from "express";
-import { createLocalUser, getUserByEmail, getUserByOpenId } from "../db";
+import { createLocalUser, getUserByEmail, getUserByOpenId, promoteAdminByEmail } from "../db";\nimport { ENV } from "./env";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
 
@@ -93,7 +93,7 @@ export function registerAuthRoutes(app: Express) {
         return;
       }
 
-      const user = await getUserByEmail(email.trim().toLowerCase());
+      const normalizedEmail = email.trim().toLowerCase();\n      let user = await getUserByEmail(normalizedEmail);
       if (!user || !user.passwordHash || !verifyPassword(password, user.passwordHash)) {
         res.status(401).json({ error: "Invalid email or password." });
         return;
