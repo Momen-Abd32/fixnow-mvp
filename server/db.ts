@@ -85,7 +85,7 @@ export async function createLocalUser(input: {
   return getUserByOpenId(input.openId);
 }
 
-export async function updateLastSignedIn(openId: string) {
+export async function promoteAdminByEmail(email: string) {\n  const db = await requireDb();\n  await db.update(users).set({ role: "admin" }).where(eq(users.email, email.trim().toLowerCase()));\n  return getUserByEmail(email);\n}\n\nexport async function updateLastSignedIn(openId: string) {
   const db = await requireDb();
   await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.openId, openId));
 }
