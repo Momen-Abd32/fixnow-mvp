@@ -121,6 +121,7 @@ CREATE TABLE `technician_profiles` (
 	CONSTRAINT `technician_profiles_user_id_unique` UNIQUE(`userId`)
 );
 --> statement-breakpoint
+ALTER TABLE `users` ADD `passwordHash` varchar(255);--> statement-breakpoint
 ALTER TABLE `users` ADD `phone` varchar(32);--> statement-breakpoint
 ALTER TABLE `users` ADD `profileImage` varchar(1024);--> statement-breakpoint
 ALTER TABLE `users` ADD `addresses` json;--> statement-breakpoint
