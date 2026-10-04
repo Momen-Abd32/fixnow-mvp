@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import path from "path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
@@ -69,6 +70,16 @@ export function createApp() {
       createContext,
     }),
   );
+
+  // Serve the Expo web build from the same Railway service as the API.
+  const webDist = path.join(process.cwd(), "web-dist");
+  app.use(express.static(webDist));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api/")) return next();
+    res.sendFile(path.join(webDist, "index.html"), (error) => {
+      if (error) next(error);
+    });
+  });
 
   return { app, server };
 }
