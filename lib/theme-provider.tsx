@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { Appearance, View, useColorScheme as useSystemColorScheme } from "react-native";
+import { Appearance, View } from "react-native";
 import { colorScheme as nativewindColorScheme, vars } from "nativewind";
 
 import { SchemeColors, type ColorScheme } from "@/constants/theme";
@@ -12,8 +12,7 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemScheme = useSystemColorScheme() ?? "light";
-  const [colorScheme, setColorSchemeState] = useState<ColorScheme>(systemScheme);
+  const [colorScheme, setColorSchemeState] = useState<ColorScheme>("dark");
 
   const applyScheme = useCallback((scheme: ColorScheme) => {
     nativewindColorScheme.set(scheme);
@@ -26,6 +25,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       Object.entries(palette).forEach(([token, value]) => {
         root.style.setProperty(`--color-${token}`, value);
       });
+      root.style.backgroundColor = palette.background;
+      root.style.color = palette.foreground;
     }
   }, []);
 
@@ -35,8 +36,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [applyScheme]);
 
   useEffect(() => {
-    applyScheme(colorScheme);
-  }, [applyScheme, colorScheme]);
+    applyScheme("dark");
+  }, [applyScheme]);
 
   const themeVariables = useMemo(
     () =>
@@ -54,14 +55,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     [colorScheme],
   );
 
-  const value = useMemo(
-    () => ({
-      colorScheme,
-      setColorScheme,
-    }),
-    [colorScheme, setColorScheme],
-  );
-  console.log(value, themeVariables)
+  const value = useMemo(() => ({ colorScheme, setColorScheme }), [colorScheme, setColorScheme]);
 
   return (
     <ThemeContext.Provider value={value}>
@@ -72,8 +66,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
 export function useThemeContext(): ThemeContextValue {
   const ctx = useContext(ThemeContext);
-  if (!ctx) {
-    throw new Error("useThemeContext must be used within ThemeProvider");
-  }
+  if (!ctx) throw new Error("useThemeContext must be used within ThemeProvider");
   return ctx;
 }
