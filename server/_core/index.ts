@@ -83,4 +83,4 @@ if (process.env.VERCEL !== "1") {
       });
     })
     .catch(console.error);
-}\n
+}
