@@ -4,7 +4,7 @@ const themeColors = {
   background: { light: "#FFFFFF", dark: "#000000" },
   surface: { light: "#FFFFFF", dark: "#111111" },
   foreground: { light: "#000000", dark: "#FFFFFF" },
-  muted: { light: "#222222", dark: "#DDDDDD" },
+  muted: { light: "#000000", dark: "#FFFFFF" },
   border: { light: "#BBBBBB", dark: "#444444" },
   success: { light: "#08704F", dark: "#5BD3A8" },
   warning: { light: "#8A4F00", dark: "#FFC15C" },
