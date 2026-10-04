@@ -2,15 +2,17 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { router } from "expo-router";
 import { useMemo } from "react";
 import { ActivityIndicator, FlatList, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { Card, Chip, FixNowMark, IconButton, PrimaryButton, ScreenTitle } from "@/components/fixnow-ui";
+import { Card, Chip, FixNowMark, IconButton, LanguageButton, PrimaryButton, ScreenTitle } from "@/components/fixnow-ui";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
+import { useLanguage } from "@/lib/language-provider";
 
 type CatalogItem = { id: number; name: string; description: string; icon: string; basePriceMin: number; basePriceMax: number };
 
 export default function HomeScreen() {
   const colors = useColors();
+  const { t } = useLanguage();
   const { data, isLoading, isFetching } = trpc.catalog.list.useQuery(undefined, { retry: 1 });
   const categories = useMemo<CatalogItem[]>(() => data ?? [], [data]);
 
@@ -21,23 +23,23 @@ export default function HomeScreen() {
   return (
     <ScreenContainer className="px-5" containerClassName="bg-background">
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <View style={styles.nav}><FixNowMark /><View style={styles.navActions}><IconButton icon="notifications-none" label="Notifications" onPress={() => router.push("/(tabs)/profile")} /><IconButton icon="person-outline" label="Profile" onPress={() => router.push("/(tabs)/profile")} /></View></View>
+        <View style={styles.nav}><FixNowMark /><View style={styles.navActions}><LanguageButton /><IconButton icon="notifications-none" label={t("Notifications")} onPress={() => router.push("/(tabs)/profile")} /><IconButton icon="person-outline" label={t("Profile")} onPress={() => router.push("/(tabs)/profile")} /></View></View>
 
         <View style={[styles.hero, { backgroundColor: colors.foreground }]}>
-          <View style={styles.heroTop}><Chip label="LOCAL HOME SERVICES" tone="primary" /><View style={styles.heroIcon}><MaterialIcons name="bolt" size={22} color="#FFFFFF" /></View></View>
+          <View style={styles.heroTop}><Chip label={t("LOCAL HOME SERVICES")} tone="primary" /><View style={styles.heroIcon}><MaterialIcons name="bolt" size={22} color="#FFFFFF" /></View></View>
           <Text style={styles.heroTitle}>A better fix{`\n`}starts here.</Text>
-          <Text style={styles.heroBody}>Tell us what is wrong, choose a verified specialist, and follow every step until the job is done.</Text>
-          <View style={styles.heroAction}><PrimaryButton label="Start a service request" icon="arrow-forward" onPress={() => goToRequest()} /></View>
+          <Text style={[styles.heroBody, { color: colors.muted }]}>{t("Tell us what is wrong, choose a verified specialist, and follow every step until the job is done.")}</Text>
+          <View style={styles.heroAction}><PrimaryButton label={t("Start a service request")} icon="arrow-forward" onPress={() => goToRequest()} /></View>
         </View>
 
         <Pressable accessibilityRole="button" onPress={() => router.push("/diagnosis")} style={({ pressed }) => [styles.diagnosis, { backgroundColor: `${colors.primary}14`, borderColor: `${colors.primary}36`, opacity: pressed ? 0.8 : 1 }]}>
           <View style={[styles.diagnosisIcon, { backgroundColor: colors.primary }]}><MaterialIcons name="auto-awesome" size={22} color="#FFFFFF" /></View>
-          <View style={styles.diagnosisCopy}><Text style={[styles.diagnosisTitle, { color: colors.foreground }]}>Not sure who to call?</Text><Text style={[styles.diagnosisBody, { color: colors.muted }]}>Get a safe, preliminary AI assessment in minutes.</Text></View>
+          <View style={styles.diagnosisCopy}><Text style={[styles.diagnosisTitle, { color: colors.foreground }]}>{t("Not sure who to call?")}</Text><Text style={[styles.diagnosisBody, { color: colors.muted }]}>{t("Get a safe, preliminary AI assessment in minutes.")}</Text></View>
           <MaterialIcons name="arrow-forward" size={20} color={colors.primary} />
         </Pressable>
 
-        <ScreenTitle eyebrow="Book a specialist" title="What needs attention?" subtitle="Clear estimates before you choose." />
-        {isLoading ? <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.muted }}>Loading local services…</Text></View> : null}
+        <ScreenTitle eyebrow={t("Book a specialist")} title={t("What needs attention?")} subtitle={t("Clear estimates before you choose.")} />
+        {isLoading ? <View style={styles.loading}><ActivityIndicator color={colors.primary} /><Text style={{ color: colors.muted }}>{t("Loading local services…")}</Text></View> : null}
         {!isLoading ? <FlatList
           scrollEnabled={false}
           data={categories}
@@ -49,12 +51,12 @@ export default function HomeScreen() {
         /> : null}
 
         <Card style={styles.emergencyCard}>
-          <View style={styles.emergencyTop}><View style={[styles.emergencyIcon, { backgroundColor: `${colors.error}14` }]}><MaterialIcons name="warning-amber" size={21} color={colors.error} /></View><View style={styles.emergencyCopy}><Text style={[styles.emergencyTitle, { color: colors.foreground }]}>Urgent home issue?</Text><Text style={[styles.emergencyBody, { color: colors.muted }]}>For fire, sparking, gas smells, flooding, or immediate danger, move to safety and call emergency services.</Text></View></View>
-          <Pressable accessibilityRole="button" onPress={() => goToRequest()} style={({ pressed }) => [styles.emergencyAction, { borderColor: colors.error, opacity: pressed ? 0.7 : 1 }]}><Text style={[styles.emergencyActionText, { color: colors.error }]}>Create emergency request</Text><MaterialIcons name="arrow-forward" size={18} color={colors.error} /></Pressable>
+          <View style={styles.emergencyTop}><View style={[styles.emergencyIcon, { backgroundColor: `${colors.error}14` }]}><MaterialIcons name="warning-amber" size={21} color={colors.error} /></View><View style={styles.emergencyCopy}><Text style={[styles.emergencyTitle, { color: colors.foreground }]}>{t("Urgent home issue?")}</Text><Text style={[styles.emergencyBody, { color: colors.muted }]}>{t("For fire, sparking, gas smells, flooding, or immediate danger, move to safety and call emergency services.")}</Text></View></View>
+          <Pressable accessibilityRole="button" onPress={() => goToRequest()} style={({ pressed }) => [styles.emergencyAction, { borderColor: colors.error, opacity: pressed ? 0.7 : 1 }]}><Text style={[styles.emergencyActionText, { color: colors.error }]}>{t("Create emergency request")}</Text><MaterialIcons name="arrow-forward" size={18} color={colors.error} /></Pressable>
         </Card>
 
-        <View style={styles.howHeader}><Text style={[styles.sectionLabel, { color: colors.foreground }]}>HOW FIXNOW WORKS</Text>{isFetching ? <ActivityIndicator size="small" color={colors.primary} /> : null}</View>
-        <View style={styles.steps}>{[["1", "Describe", "Share what happened"], ["2", "Choose", "Compare local experts"], ["3", "Relax", "Track from arrival to review"]].map(([number, title, body]) => <View key={number} style={styles.step}><Text style={[styles.stepNumber, { color: colors.primary }]}>{number}</Text><Text style={[styles.stepTitle, { color: colors.foreground }]}>{title}</Text><Text style={[styles.stepBody, { color: colors.muted }]}>{body}</Text></View>)}</View>
+        <View style={styles.howHeader}><Text style={[styles.sectionLabel, { color: colors.foreground }]}>{t("HOW FIXNOW WORKS")}</Text>{isFetching ? <ActivityIndicator size="small" color={colors.primary} /> : null}</View>
+        <View style={styles.steps}>{[["1", t("Describe"), t("Share what happened")], ["2", t("Choose"), t("Compare local experts")], ["3", t("Relax"), t("Track from arrival to review")]].map(([number, title, body]) => <View key={number} style={styles.step}><Text style={[styles.stepNumber, { color: colors.primary }]}>{number}</Text><Text style={[styles.stepTitle, { color: colors.foreground }]}>{title}</Text><Text style={[styles.stepBody, { color: colors.muted }]}>{body}</Text></View>)}</View>
       </ScrollView>
     </ScreenContainer>
   );
@@ -68,7 +70,7 @@ const styles = StyleSheet.create({
   heroTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   heroIcon: { width: 39, height: 39, borderRadius: 14, backgroundColor: "rgba(255,255,255,0.13)", alignItems: "center", justifyContent: "center" },
   heroTitle: { color: "#FFFFFF", fontSize: 31, lineHeight: 36, fontWeight: "800", letterSpacing: -1.1, marginTop: 7 },
-  heroBody: { color: "rgba(255,255,255,0.72)", fontSize: 14, lineHeight: 21, maxWidth: 300 },
+  heroBody: { color: "#FFFFFF", fontSize: 14, lineHeight: 21, maxWidth: 300 },
   heroAction: { marginTop: 7, alignSelf: "flex-start", minWidth: 210 },
   diagnosis: { borderWidth: 1, borderRadius: 20, padding: 15, flexDirection: "row", alignItems: "center", gap: 12 },
   diagnosisIcon: { width: 44, height: 44, borderRadius: 15, alignItems: "center", justifyContent: "center" },
