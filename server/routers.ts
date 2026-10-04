@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import { COOKIE_NAME } from "../shared/const.js";
 import { AI_DISCLAIMER, canTransition, REQUEST_STATUSES, type RequestStatus } from "../shared/types";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -27,7 +28,7 @@ function enforceRateLimit(key: string, maxRequests = 6, windowMs = 60_000) {
 
 function cleanAIText(raw: unknown) {
   if (typeof raw !== "string") return "";
-  return raw.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
+  return raw.replace(/^\`\`\`json\s*/i, "").replace(/\`\`\`$/i, "").trim();
 }
 
 function fallbackDiagnosis(description: string) {
@@ -69,12 +70,12 @@ export const appRouter = router({
     }),
   }),
   catalog: router({
-    list: publicProcedure.input(z.object({ includeInactive: z.boolean().optional() }).optional()).query(({ input }) => db.listCategories(input?.includeInactive)),
+    list: publicProcedure.input(z.object({ includeInactive: z.boolean().optional() }).optional()).query((input) => db.listCategories(input.input?.includeInactive)),
     create: adminProcedure.input(z.object({ name: z.string().min(2).max(120), slug: z.string().regex(/^[a-z0-9-]+$/), description: z.string().min(8).max(600), icon: z.string().min(2).max(48), basePriceMin: z.number().int().positive(), basePriceMax: z.number().int().positive() })).mutation(async ({ input }) => {
       if (input.basePriceMin > input.basePriceMax) throw new TRPCError({ code: "BAD_REQUEST", message: "Minimum price cannot exceed maximum price." });
       const connection = await db.getDb();
       if (!connection) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is unavailable." });
-      const { serviceCategories } = await import("../drizzle/schema");
+      const { serviceCategories } = await import("../drizzle/schema.js");
       await connection.insert(serviceCategories).values({ ...input, active: true });
       return { success: true };
     }),
@@ -84,8 +85,8 @@ export const appRouter = router({
     update: protectedProcedure.input(z.object({ name: z.string().min(2).max(120).optional(), phone: z.string().max(32).optional(), addresses: z.array(z.object({ label: z.string().min(1).max(48), address: z.string().min(4).max(300), latitude: z.number().optional(), longitude: z.number().optional() })).max(10).optional() })).mutation(async ({ ctx, input }) => {
       const connection = await db.getDb();
       if (!connection) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database is unavailable." });
-      const { users } = await import("../drizzle/schema");
-      await connection.update(users).set(input).where((await import("drizzle-orm")).eq(users.id, ctx.user.id));
+      const { users } = await import("../drizzle/schema.js");
+      await connection.update(users).set(input).where(eq(users.id, ctx.user.id));
       return { success: true };
     }),
   }),
@@ -236,7 +237,7 @@ export const appRouter = router({
     setVerification: adminProcedure.input(z.object({ technicianId: z.number().int().positive(), verificationStatus: z.enum(["pending", "verified", "rejected"]) })).mutation(({ input }) => db.setVerification(input.technicianId, input.verificationStatus)),
     requests: adminProcedure.query(() => db.listAllRequests()),
     reviews: adminProcedure.query(() => db.listReviewsForAdmin()),
-    setReviewVisibility: adminProcedure.input(z.object({ reviewId: z.number().int().positive(), visible: z.boolean() })).mutation(({ input }) => db.setReviewVisibility(input.reviewId, input.visible)),
+    setReviewVisibility: adminProcedure.input(z.object({ reviewId: z.number().int().positive(), visible: z.boolean() })).mutation(({ input }) => db.setReviewVisibility(input.reviewId, input.verificationStatus)),
   }),
 });
 
