@@ -840,6 +840,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "passwordHash": {
+          "name": "passwordHash",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "phone": {
           "name": "phone",
           "type": "varchar(32)",
