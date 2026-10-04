@@ -24,6 +24,7 @@ export default function ProfileScreen() {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.nav}><FixNowMark compact /><IconButton icon="logout" label="Sign out" onPress={() => void logout()} /></View>
         <ScreenTitle eyebrow="Account" title={displayName} subtitle={user.email ?? "Your account is protected by secure authentication."} />
+        {profile.data?.user.role === "admin" ? <Card style={styles.adminCard}><Pressable accessibilityRole="button" onPress={() => router.push("/admin")} style={({ pressed }) => [styles.adminButton, { borderColor: colors.primary, backgroundColor: `${colors.primary}12`, opacity: pressed ? 0.7 : 1 }]}><View style={[styles.adminIcon, { backgroundColor: colors.primary }]}><MaterialIcons name="admin-panel-settings" size={20} color="#FFFFFF" /></View><View style={styles.adminCopy}><Text style={[styles.adminTitle, { color: colors.foreground }]}>Admin Control Center</Text><Text style={[styles.adminText, { color: colors.muted }]}>Manage technicians, requests, users, and reviews.</Text></View><MaterialIcons name="arrow-forward-ios" size={16} color={colors.primary} /></Pressable></Card> : null}
         <Card>
           <View style={styles.accountTop}><View style={[styles.avatar, { backgroundColor: `${colors.primary}18` }]}><Text style={[styles.avatarText, { color: colors.primary }]}>{displayName.slice(0, 1).toUpperCase()}</Text></View><View style={styles.accountCopy}><Text style={[styles.accountName, { color: colors.foreground }]}>{displayName}</Text><View style={styles.chips}><Chip label="SECURE ACCOUNT" tone="success" />{profile.data?.technician ? <Chip label="TECHNICIAN" tone="primary" /> : <Chip label="CUSTOMER" tone="neutral" />}</View></View></View>
           <View style={[styles.divider, { backgroundColor: colors.border }]} />
@@ -89,6 +90,12 @@ const styles = StyleSheet.create({
   notificationTitle: { fontSize: 13, lineHeight: 18, fontWeight: "800" },
   notificationBody: { fontSize: 11, lineHeight: 16 },
   date: { fontSize: 10, lineHeight: 14, marginTop: 2 },
+  adminCard: { padding: 0, overflow: "hidden" },
+  adminButton: { minHeight: 76, borderWidth: 1, borderRadius: 20, padding: 12, flexDirection: "row", alignItems: "center", gap: 11 },
+  adminIcon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  adminCopy: { flex: 1, gap: 3 },
+  adminTitle: { fontSize: 14, lineHeight: 19, fontWeight: "800" },
+  adminText: { fontSize: 11, lineHeight: 16 },
   techCard: { gap: 10 },
   techHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   techIcon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" },
