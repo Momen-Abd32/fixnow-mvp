@@ -70,4 +70,17 @@ export function createApp() {
     }),
   );
 
-  return { app, server };\n}\n\nif (process.env.VERCEL !== "1") {\n  const { server } = createApp();\n  const preferredPort = parseInt(process.env.PORT || "3000");\n  findAvailablePort(preferredPort).then((port) => {\n    server.listen(port, () => {\n      console.log(`[api] server listening on port ${port}`);\n    });\n  }).catch(console.error);\n}\n
+  return { app, server };
+}
+
+if (process.env.VERCEL !== "1") {
+  const { server } = createApp();
+  const preferredPort = parseInt(process.env.PORT || "3000");
+  findAvailablePort(preferredPort)
+    .then((port) => {
+      server.listen(port, () => {
+        console.log(`[api] server listening on port ${port}`);
+      });
+    })
+    .catch(console.error);
+}\n
