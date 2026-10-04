@@ -82,9 +82,12 @@ export default function RootLayout() {
     return (
       <SafeAreaProvider initialMetrics={providerInitialMetrics}>
         <SafeAreaFrameContext.Provider value={frame}>
-          <SafeAreaInsetsContext.Provider value={insets}>{providers}</SafeAreaInsetsContext.Provider>
-        </SafeAreaProvider>
-      );
+          <SafeAreaInsetsContext.Provider value={insets}>
+            {providers}
+          </SafeAreaInsetsContext.Provider>
+        </SafeAreaFrameContext.Provider>
+      </SafeAreaProvider>
+    );
   }
 
   return <SafeAreaProvider initialMetrics={providerInitialMetrics}>{providers}</SafeAreaProvider>;
