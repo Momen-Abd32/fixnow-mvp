@@ -214,4 +214,4 @@ GitHub Actions is configured to run the automated gates on pushes and pull reque
 5. Configure store assets, OAuth redirect URIs, app privacy metadata, remote notification credentials, and an approved payment processor before public distribution.
 
 The initial service is intentionally scoped for a supervised pilot: local geography, cash payment, foreground location, and verified technician onboarding.
-<!-- CI smoke-test trigger: 2026-10-03 -->
+<!-- CI smoke-test trigger: 2026-10-04 -->
