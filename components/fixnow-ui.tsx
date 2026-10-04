@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import type { ComponentProps, ReactNode } from "react";
 import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useColors } from "@/hooks/use-colors";
+import { useLanguage } from "@/lib/language-provider";
 
 export function FixNowMark({ compact = false }: { compact?: boolean }) {
   const colors = useColors();
@@ -14,6 +15,26 @@ export function FixNowMark({ compact = false }: { compact?: boolean }) {
       </View>
       {!compact && <Text style={[styles.wordmark, { color: colors.foreground }]}>Fix<Text style={{ color: colors.primary }}>Now</Text></Text>}
     </View>
+  );
+}
+
+export function LanguageButton() {
+  const colors = useColors();
+  const { language, toggleLanguage } = useLanguage();
+  const nextLanguage = language === "en" ? "AR" : "EN";
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={language === "en" ? "Switch to Arabic" : "Switch to English"}
+      onPress={toggleLanguage}
+      style={({ pressed }) => [
+        styles.languageButton,
+        { backgroundColor: colors.surface, borderColor: colors.border, opacity: pressed ? 0.7 : 1 },
+      ]}
+    >
+      <MaterialIcons name="language" size={17} color={colors.foreground} />
+      <Text style={[styles.languageText, { color: colors.foreground }]}>{nextLanguage}</Text>
+    </Pressable>
   );
 }
 
@@ -105,6 +126,8 @@ export function shortDate(value: Date | string | null | undefined) {
 const styles = StyleSheet.create({
   markRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   mark: { width: 34, height: 34, alignItems: "center", justifyContent: "center", borderRadius: 11 },
+  languageButton: { minWidth: 58, height: 42, paddingHorizontal: 11, borderRadius: 14, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 5, borderWidth: 1 },
+  languageText: { fontSize: 12, lineHeight: 16, fontWeight: "900" },
   wordmark: { fontSize: 23, lineHeight: 28, fontWeight: "800", letterSpacing: -0.8 },
   titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
   titleCopy: { flex: 1, gap: 3 },
