@@ -4,17 +4,19 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useLanguage } from "@/lib/language-provider";
 
 export default function TabLayout() {
   const colors = useColors();
+  const { t } = useLanguage();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 10 : Math.max(insets.bottom, 8);
   return (
     <Tabs screenOptions={{ headerShown: false, tabBarButton: HapticTab, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: colors.muted, tabBarStyle: { height: 60 + bottomPadding, paddingTop: 7, paddingBottom: bottomPadding, backgroundColor: colors.background, borderTopColor: colors.border, borderTopWidth: 0.7 }, tabBarLabelStyle: { fontSize: 10, fontWeight: "700" } }}>
-      <Tabs.Screen name="index" options={{ title: "Home", tabBarIcon: ({ color }) => <IconSymbol size={24} name="house.fill" color={color} /> }} />
-      <Tabs.Screen name="jobs" options={{ title: "My jobs", tabBarIcon: ({ color }) => <IconSymbol size={24} name="briefcase.fill" color={color} /> }} />
-      <Tabs.Screen name="technician" options={{ title: "Work", tabBarIcon: ({ color }) => <IconSymbol size={24} name="wrench.and.screwdriver.fill" color={color} /> }} />
-      <Tabs.Screen name="profile" options={{ title: "Profile", tabBarIcon: ({ color }) => <IconSymbol size={24} name="person.crop.circle.fill" color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: t("Home"), tabBarIcon: ({ color }) => <IconSymbol size={24} name="house.fill" color={color} /> }} />
+      <Tabs.Screen name="jobs" options={{ title: t("My jobs"), tabBarIcon: ({ color }) => <IconSymbol size={24} name="briefcase.fill" color={color} /> }} />
+      <Tabs.Screen name="technician" options={{ title: t("Work"), tabBarIcon: ({ color }) => <IconSymbol size={24} name="wrench.and.screwdriver.fill" color={color} /> }} />
+      <Tabs.Screen name="profile" options={{ title: t("Profile"), tabBarIcon: ({ color }) => <IconSymbol size={24} name="person.crop.circle.fill" color={color} /> }} />
     </Tabs>
   );
 }
