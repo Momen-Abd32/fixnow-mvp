@@ -26,6 +26,7 @@ export default function AuthScreen() {
       const result = mode === "login"
         ? await Api.login(email.trim(), password)
         : await Api.register(name.trim(), email.trim(), password);
+
       await Auth.setSessionToken(result.sessionToken);
       await Auth.setUserInfo({
         id: result.user.id,
@@ -35,7 +36,18 @@ export default function AuthScreen() {
         loginMethod: result.user.loginMethod,
         lastSignedIn: new Date(result.user.lastSignedIn || Date.now()),
       });
-      router.replace("/(tabs)");
+
+      // Confirm the token is actually accepted by the API before leaving auth.
+      const authenticatedUser = await Api.getMe();
+      if (!authenticatedUser) {
+        throw new Error("Login succeeded, but the session could not be verified. Please try again.");
+      }
+
+      // Auth is presented as a modal. Dismiss the modal stack first, then
+      // replace the underlying route with the tab root so web/native behave
+      // consistently.
+      router.dismissAll();
+      router.replace("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Authentication failed.");
     } finally {
